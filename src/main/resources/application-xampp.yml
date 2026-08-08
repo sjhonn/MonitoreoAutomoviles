@@ -1,0 +1,21 @@
+spring:
+  datasource:
+    url: jdbc:mariadb://127.0.0.1:3306/autotrack
+    username: ${XAMPP_DB_USERNAME:autotrack_user}
+    password: ${XAMPP_DB_PASSWORD:}
+    driver-class-name: org.mariadb.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    database-platform: org.hibernate.dialect.MariaDBDialect
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+
+app:
+  seed-demo: true
+  simulator:
+    enabled: true

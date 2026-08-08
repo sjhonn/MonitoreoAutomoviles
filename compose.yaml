@@ -1,0 +1,40 @@
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:-autotrack}
+      MYSQL_USER: ${DB_USERNAME:-autotrack}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-autotrack-local-password}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-autotrack-root-password}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-autotrack-root-password}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: mysql
+      DB_URL: jdbc:mysql://db:3306/${DB_NAME:-autotrack}?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
+      DB_USERNAME: ${DB_USERNAME:-autotrack}
+      DB_PASSWORD: ${DB_PASSWORD:-autotrack-local-password}
+      JWT_SECRET: ${JWT_SECRET:-change-this-jwt-secret-to-at-least-32-characters}
+      APP_ADMIN_NAME: ${APP_ADMIN_NAME:-AutoTrack Admin}
+      APP_ADMIN_EMAIL: ${APP_ADMIN_EMAIL:-admin@autotrack.local}
+      APP_ADMIN_PASSWORD: ${APP_ADMIN_PASSWORD:-Admin123!}
+      APP_SIMULATOR_ENABLED: ${APP_SIMULATOR_ENABLED:-true}
+    ports:
+      - "8080:8080"
+
+volumes:
+  mysql_data:

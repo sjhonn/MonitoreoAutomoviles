@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark">
+    <title>AutoTrack | Monitoreo vehicular</title>
+    <link rel="stylesheet" href="/assets/app.css">
+</head>
+<body>
+<div class="app-shell">
+    <section id="loginView" class="login-view">
+        <div class="login-card">
+            <div class="brand-lockup">
+                <div class="brand-mark">AT</div>
+                <div>
+                    <p class="eyebrow">REAL-TIME FLEET PLATFORM</p>
+                    <h1>AutoTrack</h1>
+                </div>
+            </div>
+            <p class="muted">Monitoreo de autom&oacute;viles, telemetr&iacute;a, alertas y administraci&oacute;n de flota.</p>
+
+            <form id="loginForm" class="stack-form">
+                <label>
+                    Correo
+                    <input id="email" type="email" autocomplete="username" value="admin@autotrack.local" required>
+                </label>
+                <label>
+                    Contrase&ntilde;a
+                    <input id="password" type="password" autocomplete="current-password" value="Admin123!" required>
+                </label>
+                <button class="btn btn-primary" type="submit">Ingresar</button>
+                <p id="loginError" class="form-error" role="alert"></p>
+            </form>
+
+            <div class="dev-note">
+                <strong>Acceso local de desarrollo</strong>
+                <span>admin@autotrack.local / Admin123!</span>
+                <small>C&aacute;mbialo mediante variables de entorno para cualquier entorno compartido.</small>
+            </div>
+        </div>
+        <div class="login-visual">
+            <div class="visual-grid"></div>
+            <div class="visual-content">
+                <p class="eyebrow">TELEMETRIA EN VIVO</p>
+                <h2>Seguimiento sin recargar la pantalla.</h2>
+                <p>La ubicaci&oacute;n se persiste en la base de datos y se distribuye por WebSocket a los clientes autenticados.</p>
+                <div class="signal-card">
+                    <span class="pulse"></span>
+                    <div>
+                        <strong>Canal WebSocket</strong>
+                        <small>Actualizaci&oacute;n aproximada cada 2 s con el simulador local.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="dashboardView" class="dashboard hidden">
+        <aside class="sidebar">
+            <div class="brand-lockup compact">
+                <div class="brand-mark">AT</div>
+                <div>
+                    <strong>AutoTrack</strong>
+                    <small>Monitoreo vehicular</small>
+                </div>
+            </div>
+            <nav>
+                <button class="nav-item active" data-target="overviewSection">Resumen</button>
+                <button class="nav-item" data-target="vehiclesSection">Veh&iacute;culos</button>
+                <button class="nav-item" data-target="driversSection">Conductores</button>
+                <button class="nav-item" data-target="alertsSection">Alertas</button>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="/swagger-ui.html" target="_blank" rel="noreferrer">Swagger API</a>
+                <button id="logoutButton" class="btn btn-ghost">Cerrar sesi&oacute;n</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="topbar">
+                <div>
+                    <p class="eyebrow">CENTRO DE CONTROL</p>
+                    <h2 id="pageTitle">Resumen de flota</h2>
+                </div>
+                <div class="topbar-right">
+                    <div id="socketStatus" class="connection-pill offline">
+                        <span></span>
+                        <strong>Desconectado</strong>
+                    </div>
+                    <div class="user-chip">
+                        <div id="userInitials" class="avatar">AT</div>
+                        <div>
+                            <strong id="userName">Usuario</strong>
+                            <small id="userRole">-</small>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div id="toast" class="toast hidden"></div>
+
+            <section id="overviewSection" class="page-section">
+                <div class="metrics-grid">
+                    <article class="metric-card">
+                        <span>Total flota</span>
+                        <strong id="metricTotal">0</strong>
+                        <small>veh&iacute;culos registrados</small>
+                    </article>
+                    <article class="metric-card">
+                        <span>En l&iacute;nea</span>
+                        <strong id="metricOnline">0</strong>
+                        <small>telemetr&iacute;a &lt; 30 s</small>
+                    </article>
+                    <article class="metric-card">
+                        <span>En movimiento</span>
+                        <strong id="metricMoving">0</strong>
+                        <small>velocidad &gt; 1 km/h</small>
+                    </article>
+                    <article class="metric-card danger-card">
+                        <span>Alertas activas</span>
+                        <strong id="metricAlerts">0</strong>
+                        <small>pendientes de revisar</small>
+                    </article>
+                </div>
+
+                <div class="content-grid">
+                    <article class="panel tracking-panel">
+                        <div class="panel-header">
+                            <div>
+                                <p class="eyebrow">TRACKING BOARD</p>
+                                <h3>Posici&oacute;n en tiempo real</h3>
+                            </div>
+                            <span class="subtle-badge">Sin tiles externos</span>
+                        </div>
+                        <div class="canvas-wrap">
+                            <canvas id="trackingCanvas"></canvas>
+                            <div class="canvas-legend">
+                                <span><i class="legend-dot live"></i> Posici&oacute;n actual</span>
+                                <span><i class="legend-dot grid"></i> Coordenadas relativas</span>
+                            </div>
+                        </div>
+                    </article>
+
+                    <article class="panel live-panel">
+                        <div class="panel-header">
+                            <div>
+                                <p class="eyebrow">ULTIMO EVENTO</p>
+                                <h3>Telemetr&iacute;a</h3>
+                            </div>
+                        </div>
+                        <div id="lastTelemetry" class="telemetry-empty">
+                            Esperando datos del simulador o de la API...
+                        </div>
+                    </article>
+                </div>
+
+                <article class="panel">
+                    <div class="panel-header">
+                        <div>
+                            <p class="eyebrow">FLOTA</p>
+                            <h3>Estado actual</h3>
+                        </div>
+                        <button id="refreshButton" class="btn btn-secondary">Actualizar</button>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                            <tr>
+                                <th>Placa</th>
+                                <th>Autom&oacute;vil</th>
+                                <th>Estado</th>
+                                <th>Velocidad</th>
+                                <th>Conductor</th>
+                                <th>&Uacute;ltima se&ntilde;al</th>
+                            </tr>
+                            </thead>
+                            <tbody id="overviewVehiclesBody"></tbody>
+                        </table>
+                    </div>
+                </article>
+            </section>
+
+            <section id="vehiclesSection" class="page-section hidden">
+                <div class="split-layout">
+                    <article class="panel form-panel">
+                        <div class="panel-header">
+                            <div>
+                                <p class="eyebrow">ADMINISTRACION</p>
+                                <h3>Nuevo veh&iacute;culo</h3>
+                            </div>
+                        </div>
+                        <form id="vehicleForm" class="stack-form compact-form">
+                            <div class="form-row">
+                                <label>Placa<input id="vehiclePlate" maxlength="20" placeholder="ABC-123" required></label>
+                                <label>A&ntilde;o<input id="vehicleYear" type="number" min="1950" max="2100" value="2026" required></label>
+                            </div>
+                            <label>Marca<input id="vehicleBrand" maxlength="80" placeholder="Toyota" required></label>
+                            <label>Modelo<input id="vehicleModel" maxlength="80" placeholder="Corolla" required></label>
+                            <div class="form-row">
+                                <label>Vel. m&aacute;xima<input id="vehicleMaxSpeed" type="number" min="1" step="0.1" value="80" required></label>
+                                <label>Conductor<select id="vehicleDriver"><option value="">Sin asignar</option></select></label>
+                            </div>
+                            <button class="btn btn-primary" type="submit">Registrar veh&iacute;culo</button>
+                        </form>
+                    </article>
+
+                    <article class="panel">
+                        <div class="panel-header">
+                            <div>
+                                <p class="eyebrow">INVENTARIO</p>
+                                <h3>Veh&iacute;culos</h3>
+                            </div>
+                        </div>
+                        <div id="vehicleCards" class="card-list"></div>
+                    </article>
+                </div>
+            </section>
+
+            <section id="driversSection" class="page-section hidden">
+                <div class="split-layout">
+                    <article class="panel form-panel">
+                        <div class="panel-header">
+                            <div>
+                                <p class="eyebrow">PERSONAL</p>
+                                <h3>Nuevo conductor</h3>
+                            </div>
+                        </div>
+                        <form id="driverForm" class="stack-form compact-form">
+                            <label>Nombre completo<input id="driverName" maxlength="140" required></label>
+                            <label>Licencia<input id="driverLicense" maxlength="60" placeholder="Q12345678" required></label>
+                            <label>Tel&eacute;fono<input id="driverPhone" maxlength="40"></label>
+                            <button class="btn btn-primary" type="submit">Registrar conductor</button>
+                        </form>
+                    </article>
+                    <article class="panel">
+                        <div class="panel-header">
+                            <div>
+                                <p class="eyebrow">DIRECTORIO</p>
+                                <h3>Conductores</h3>
+                            </div>
+                        </div>
+                        <div id="driverCards" class="card-list"></div>
+                    </article>
+                </div>
+            </section>
+
+            <section id="alertsSection" class="page-section hidden">
+                <article class="panel">
+                    <div class="panel-header">
+                        <div>
+                            <p class="eyebrow">SEGURIDAD OPERATIVA</p>
+                            <h3>Alertas recientes</h3>
+                        </div>
+                    </div>
+                    <div id="alertList" class="alert-list"></div>
+                </article>
+            </section>
+        </main>
+    </section>
+</div>
+<script src="/assets/app.js"></script>
+</body>
+</html>

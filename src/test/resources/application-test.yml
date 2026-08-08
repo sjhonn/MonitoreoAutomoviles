@@ -1,0 +1,21 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:autotrack-test;MODE=MySQL;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+
+app:
+  security:
+    jwt:
+      secret: autotrack-test-secret-with-at-least-32-bytes
+  simulator:
+    enabled: false
+  seed-demo: true
+  admin:
+    name: Test Admin
+    email: admin@autotrack.local
+    password: Admin123!
